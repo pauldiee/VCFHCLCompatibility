@@ -24,13 +24,19 @@ When `-TargetESXiVersion` is supplied, each unique device is looked up against t
 
 ## Requirements
 
-- **VMware PowerCLI**
+- **PowerCLI**: VCF.PowerCLI for vCenter 9, VMware.PowerCLI for vCenter 7 / 8 ([KB 428547](https://knowledge.broadcom.com/external/article/428547)). The script only needs `VMware.VimAutomation.Core`, which both provide.
 
 ```powershell
+# vCenter 9 / VCF 9
+Install-Module VCF.PowerCLI -Scope CurrentUser
+
+# vCenter 7 / 8
 Install-Module VMware.PowerCLI -Scope CurrentUser
 ```
 
-- **PowerShell 5.1 or later** (Windows PowerShell 5.1 and PowerShell 7.x are both supported)
+- **PowerShell 5.1 or later** with VMware.PowerCLI; **PowerShell 7** with VCF.PowerCLI 9.x ([KB 409981](https://knowledge.broadcom.com/external/article/409981))
+
+Setting up PowerShell 7 and VCF.PowerCLI on a jump host, with or without internet access, and keeping one PowerCLI version per host: [Jump Host: PowerShell 7 and VCF PowerCLI](https://vcf-planning.hollebollevsan.nl/docs/42-jump-host-powershell/).
 - **Network access** to `compatibilityguide.broadcom.com` from the machine running the script
 - vCenter credentials with at least read access to hosts and clusters
 
