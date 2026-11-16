@@ -44,7 +44,8 @@
 .NOTES
     Broadcom HCL URL : https://compatibilityguide.broadcom.com/
     BCG API          : Unofficial/undocumented - subject to change without notice.
-    Required         : VMware.PowerCLI module (Install-Module VMware.PowerCLI)
+    Required         : VMware.VimAutomation.Core: VCF.PowerCLI (vCenter 9, PowerShell 7)
+                       or VMware.PowerCLI (vCenter 7/8)
     Author           : Paul van Dieen
     Blog             : https://www.hollebollevsan.nl
     Original Idea    : Kabir Ali
@@ -74,6 +75,9 @@
             that may return a single object (driverFirmwareCombos, filtered rows).
             GPU HCL check now skips embedded/management display chips (iLO, BMC);
             only NVIDIA (10de), AMD (1002), and Intel (8086) GPUs are checked.
+    1.4.1 - PowerCLI loading: imports VMware.VimAutomation.Core with -ErrorAction Stop\n            (a failed import was swallowed); stops when PowerCLI modules of different
+            versions are already loaded; clear error with the loaded modules and a
+            link to the jump-host guide; install hint per vCenter version (#2).
 #>
 
 [CmdletBinding()]
@@ -95,14 +99,63 @@ param(
 )
 
 # -----------------------------------------------------------------------------
-# Check PowerCLI is available (it installs as sub-modules, not "VMware.PowerCLI")
+# PowerCLI module check
 # -----------------------------------------------------------------------------
-$PowerCLICheck = Get-Module -ListAvailable -Name "VMware.VimAutomation.Core" -ErrorAction SilentlyContinue
-if (-not $PowerCLICheck) {
-    Write-Error "VMware PowerCLI does not appear to be installed. Run: Install-Module VMware.PowerCLI -Scope CurrentUser"
+# The script needs only VMware.VimAutomation.Core (and what it requires), not
+# the whole PowerCLI bundle. Loading problems almost always come from the
+# jump host (several PowerCLI versions side by side, an old one already loaded
+# in the session, an incomplete or blocked offline install); the fix belongs
+# there, so the script only explains what it found and where to read on.
+$jumpHostGuide = 'https://vcf-planning.hollebollevsan.nl/docs/42-jump-host-powershell/'
+
+function Stop-ModuleLoadFailure {
+    param([string]$Reason)
+    Write-Host '  [ERROR] Could not load PowerCLI (VMware.VimAutomation.Core).' -ForegroundColor Red
+    if ($Reason) { Write-Host "          $Reason" -ForegroundColor Red }
+    Write-Host '          Start a clean session with "pwsh -NoProfile" and run the script first.' -ForegroundColor Yellow
+    Write-Host '          Keep one complete, unblocked PowerCLI version on this host; see the jump-host' -ForegroundColor Yellow
+    Write-Host "          guide, section 4 (completeness check) and 6 (pitfalls): $jumpHostGuide" -ForegroundColor Yellow
+    $loaded = @(Get-Module -Name VMware.*, VCF.PowerCLI)
+    if ($loaded.Count -gt 0) {
+        Write-Host '          Loaded now:' -ForegroundColor Yellow
+        $loaded | Sort-Object Name | ForEach-Object {
+            Write-Host "            $($_.Name) $($_.Version)  ($($_.ModuleBase))" -ForegroundColor Yellow
+        }
+    }
     exit 1
 }
-Import-Module VMware.VimAutomation.Core -ErrorAction SilentlyContinue
+function Get-ShortError {
+    param($ErrorRecord)
+    $m = "$($ErrorRecord.Exception.Message)"
+    if ($m -match "`t") { $m = @($m -split "`t" | Where-Object { $_.Trim() })[-1].Trim() }
+    return $m
+}
+
+if (-not (Get-Module -ListAvailable -Name VMware.VimAutomation.Core)) {
+    Write-Host '  [ERROR] No PowerCLI found (VMware.VimAutomation.Core is not installed).' -ForegroundColor Red
+    Write-Host '          vCenter 9:     Install-Module -Name VCF.PowerCLI -Scope CurrentUser   (needs PowerShell 7, KB 409981)' -ForegroundColor Yellow
+    Write-Host '          vCenter 7 / 8: Install-Module -Name VMware.PowerCLI -Scope CurrentUser  (KB 428547)' -ForegroundColor Yellow
+    Write-Host "          Without internet access: $jumpHostGuide (section 3)" -ForegroundColor Yellow
+    exit 1
+}
+
+# All VMware.VimAutomation.* modules of one PowerCLI release share one version
+# (13.5.1.x for VCF.PowerCLI 9.1.1); StorageUtility is versioned on its own.
+$loadedVersions = @(Get-Module -Name VMware.VimAutomation.* |
+    Where-Object { $_.Name -ne 'VMware.VimAutomation.StorageUtility' } |
+    ForEach-Object { "$($_.Version)" } | Select-Object -Unique)
+if ($loadedVersions.Count -gt 1) {
+    Stop-ModuleLoadFailure -Reason "PowerCLI modules of different versions are already loaded in this session ($($loadedVersions -join ', '))."
+}
+
+try {
+    Import-Module -Name VMware.VimAutomation.Core -ErrorAction Stop -WarningAction SilentlyContinue 6>$null
+}
+catch {
+    Stop-ModuleLoadFailure -Reason (Get-ShortError $_)
+}
+Write-Host "  [INFO] PowerCLI $(@(Get-Module -Name VMware.VimAutomation.Core)[0].Version) loaded." -ForegroundColor Cyan
+
 
 # -----------------------------------------------------------------------------
 # Helper: suppress certificate warnings (lab/self-signed environments)

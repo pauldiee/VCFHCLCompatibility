@@ -127,6 +127,7 @@ The script queries the same REST API used by the Broadcom Compatibility Guide po
 
 | Version | Changes |
 |---|---|
+| 1.4.1 | PowerCLI loading: import with `-ErrorAction Stop`, stop on mixed PowerCLI versions already loaded, clear error with loaded modules and jump-host guide link (#2). |
 | 1.4.0 | HTML report: tab per host, collapsible driver/fw combos. Fixed HBA PCI lookup to exact DeviceName match. Removed SVID from BCG API filters (client-side only). Detail API walks all candidate UUIDs. Fixed PowerShell 5 array unwrapping bug. Skip embedded GPU/display chips. |
 | 1.3.0 | CPU HCL check via BCG `cpu` program. CPU series matched by model number prefix. CPU rows rendered separately in HTML. |
 | 1.2.1 | PowerShell 5 compatibility fixes. Fixed `viewDetails` to POST with query-string params. BCG session cookie initialisation. Driver/fw combos filtered to installed driver. |
