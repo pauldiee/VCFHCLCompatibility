@@ -50,8 +50,9 @@
     Blog             : https://www.hollebollevsan.nl
     Original Idea    : Kabir Ali
     Blog             : https://whatkabirwrites.nl/
+#>
 
-.CHANGELOG
+<# CHANGELOG
     1.0.0 - Initial release. Hardware inventory (CPU, NIC, HBA, GPU) from vCenter.
     1.1.0 - Added Broadcom HCL check via BCG API (apigw.broadcom.com).
     1.2.0 - Fixed BCG API endpoint to use compatibilityguide.broadcom.com/compguide.
@@ -75,9 +76,13 @@
             that may return a single object (driverFirmwareCombos, filtered rows).
             GPU HCL check now skips embedded/management display chips (iLO, BMC);
             only NVIDIA (10de), AMD (1002), and Intel (8086) GPUs are checked.
-    1.4.1 - PowerCLI loading: imports VMware.VimAutomation.Core with -ErrorAction Stop\n            (a failed import was swallowed); stops when PowerCLI modules of different
+    1.4.1 - PowerCLI loading: imports VMware.VimAutomation.Core with -ErrorAction Stop
+            (a failed import was swallowed); stops when PowerCLI modules of different
             versions are already loaded; clear error with the loaded modules and a
             link to the jump-host guide; install hint per vCenter version (#2).
+    1.4.2 - Get-Help shows the full help again: the changelog moved out of the help
+            block into its own comment block (the unknown .CHANGELOG keyword made
+            Get-Help ignore the whole help block). Fixed a literal \n in the 1.4.1 entry.
 #>
 
 [CmdletBinding()]
