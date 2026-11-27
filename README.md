@@ -7,6 +7,14 @@ A PowerShell script that inventories all hardware in a vSphere cluster and valid
 
 ---
 
+## Step-by-step guide
+
+Background on where this check fits:
+
+- [Prerequisites, Hardware](https://vcf-planning.hollebollevsan.nl/docs/prerequisites/#hardware) in the VCF 9 deployment guide on vcf-planning.hollebollevsan.nl: the hardware gate before any workbook input, including the Broadcom Compatibility Guide.
+
+---
+
 ## What it does
 
 For every ESXi host in the target cluster the script collects:
