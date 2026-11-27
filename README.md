@@ -5,6 +5,10 @@ A PowerShell script that inventories all hardware in a vSphere cluster and valid
 > **Original idea:** [Kabir Ali](https://whatkabirwrites.nl/)  
 > **Author:** Paul van Dieen — [hollebollevsan.nl](https://www.hollebollevsan.nl)
 
+| Script | Version | Purpose |
+|---|---|---|
+| `HCLCompatibilityReport.ps1` | 1.4.3 | Inventories the hardware of a vSphere cluster and checks each device against the Broadcom Compatibility Guide |
+
 ---
 
 ## Step-by-step guide
@@ -135,6 +139,7 @@ The script queries the same REST API used by the Broadcom Compatibility Guide po
 
 | Version | Changes |
 |---|---|
+| 1.4.3 | Version in the banner and in `.NOTES` (`scriptVersion`), changelog in the `v{version} {date} {author}` form, as in the other toolkits. No change in behaviour. |
 | 1.4.2 | `Get-Help` shows the full help again: changelog moved out of the help block into its own comment block. |
 | 1.4.1 | PowerCLI loading: import with `-ErrorAction Stop`, stop on mixed PowerCLI versions already loaded, clear error with loaded modules and jump-host guide link (#2). |
 | 1.4.0 | HTML report: tab per host, collapsible driver/fw combos. Fixed HBA PCI lookup to exact DeviceName match. Removed SVID from BCG API filters (client-side only). Detail API walks all candidate UUIDs. Fixed PowerShell 5 array unwrapping bug. Skip embedded GPU/display chips. |
