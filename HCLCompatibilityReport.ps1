@@ -42,6 +42,9 @@
     .\HCLCompatibilityReport.ps1 -vCenterServer vcenter.lab.local -TargetESXiVersion "ESXi 8.0 U3" -OutputPath "C:\HCL_Reports"
 
 .NOTES
+    Script           : HCLCompatibilityReport.ps1
+    Version          : 1.4.3
+    Tested           : not recorded in this repo
     Broadcom HCL URL : https://compatibilityguide.broadcom.com/
     BCG API          : Unofficial/undocumented - subject to change without notice.
     Required         : VMware.VimAutomation.Core: VCF.PowerCLI (vCenter 9, PowerShell 7)
@@ -53,36 +56,73 @@
 #>
 
 <# CHANGELOG
-    1.0.0 - Initial release. Hardware inventory (CPU, NIC, HBA, GPU) from vCenter.
-    1.1.0 - Added Broadcom HCL check via BCG API (apigw.broadcom.com).
-    1.2.0 - Fixed BCG API endpoint to use compatibilityguide.broadcom.com/compguide.
-            Resolved 0x prefix issue in PCI ID lookups.
-            Added driver/firmware detail lookup per device.
-            Added dark mode HTML report output.
-    1.2.1 - Fixed PowerShell 5 compatibility (inline if expressions).
-            Fixed viewDetails endpoint to POST with query string params.
-            Added BCG session cookie initialisation for authenticated detail calls.
-            Filtered driver/firmware combos to installed driver only.
-    1.3.0 - Added CPU HCL check via keyword search against BCG cpu program.
-            CPU family extracted from model string and matched against HCL series.
-            Fixed CPU series matching by model number prefix (e.g. 6348 -> 6300/5300 Ice-Lake-SP).
-            Fixed cpuSeries and supportedReleases field parsing for CPU search response.
-            CPU rows rendered separately in HTML report (no PCI IDs / driver columns).
-    1.4.0 - HTML report restructured: tab per host, collapsible driver/fw combos.
-            Fixed HBA PCI lookup to use exact DeviceName match first (resolves HPE P816i-a wrong IDs).
-            Removed SVID from BCG API search filters; SVID narrowing is now client-side only.
-            Detail API now iterates all candidate UUIDs until driver/fw combos are found.
-            Fixed PowerShell 5 array unwrapping bug: forced @() on all pipeline results
-            that may return a single object (driverFirmwareCombos, filtered rows).
-            GPU HCL check now skips embedded/management display chips (iLO, BMC);
-            only NVIDIA (10de), AMD (1002), and Intel (8086) GPUs are checked.
-    1.4.1 - PowerCLI loading: imports VMware.VimAutomation.Core with -ErrorAction Stop
-            (a failed import was swallowed); stops when PowerCLI modules of different
-            versions are already loaded; clear error with the loaded modules and a
-            link to the jump-host guide; install hint per vCenter version (#2).
-    1.4.2 - Get-Help shows the full help again: the changelog moved out of the help
-            block into its own comment block (the unknown .CHANGELOG keyword made
-            Get-Help ignore the whole help block). Fixed a literal \n in the 1.4.1 entry.
+    v1.4.3  2026-11-27  Paul van Dieen
+        - $scriptVersion, $scriptAuthor and $scriptBlogUrl, with the version in
+          the banner and in .NOTES, and this changelog in the v{version}
+          {date} {author} form, as in the other toolkits. No change in
+          behaviour. Versions up to 1.4.0 were already in the first commit
+          of this repo (2026-03-19); their own dates are not recorded.
+
+    v1.4.2  2026-11-18  Paul van Dieen
+        - Get-Help shows the full help again: the changelog moved out of the
+          help block into its own comment block (the unknown .CHANGELOG
+          keyword made Get-Help ignore the whole help block). Fixed a literal
+          \n in the 1.4.1 entry.
+
+    v1.4.1  2026-11-16  Paul van Dieen
+        - PowerCLI loading: imports VMware.VimAutomation.Core with
+          -ErrorAction Stop (a failed import was swallowed); stops when
+          PowerCLI modules of different versions are already loaded; clear
+          error with the loaded modules and a link to the jump-host guide;
+          install hint per vCenter version (#2).
+
+    v1.4.0  by 2026-03-19  Paul van Dieen
+        - HTML report restructured: tab per host, collapsible driver/fw
+          combos.
+        - Fixed HBA PCI lookup to use exact DeviceName match first (resolves
+          HPE P816i-a wrong IDs).
+        - Removed SVID from BCG API search filters; SVID narrowing is now
+          client-side only.
+        - Detail API now iterates all candidate UUIDs until driver/fw combos
+          are found.
+        - Fixed PowerShell 5 array unwrapping bug: forced @() on all pipeline
+          results that may return a single object (driverFirmwareCombos,
+          filtered rows).
+        - GPU HCL check now skips embedded/management display chips (iLO,
+          BMC); only NVIDIA (10de), AMD (1002), and Intel (8086) GPUs are
+          checked.
+
+    v1.3.0  by 2026-03-19  Paul van Dieen
+        - Added CPU HCL check via keyword search against BCG cpu program.
+        - CPU family extracted from model string and matched against HCL
+          series.
+        - Fixed CPU series matching by model number prefix (e.g. 6348 ->
+          6300/5300 Ice-Lake-SP).
+        - Fixed cpuSeries and supportedReleases field parsing for CPU search
+          response.
+        - CPU rows rendered separately in HTML report (no PCI IDs / driver
+          columns).
+
+    v1.2.1  by 2026-03-19  Paul van Dieen
+        - Fixed PowerShell 5 compatibility (inline if expressions).
+        - Fixed viewDetails endpoint to POST with query string params.
+        - Added BCG session cookie initialisation for authenticated detail
+          calls.
+        - Filtered driver/firmware combos to installed driver only.
+
+    v1.2.0  by 2026-03-19  Paul van Dieen
+        - Fixed BCG API endpoint to use
+          compatibilityguide.broadcom.com/compguide.
+        - Resolved 0x prefix issue in PCI ID lookups.
+        - Added driver/firmware detail lookup per device.
+        - Added dark mode HTML report output.
+
+    v1.1.0  by 2026-03-19  Paul van Dieen
+        - Added Broadcom HCL check via BCG API (apigw.broadcom.com).
+
+    v1.0.0  by 2026-03-19  Paul van Dieen
+        - Initial release. Hardware inventory (CPU, NIC, HBA, GPU) from
+          vCenter.
 #>
 
 [CmdletBinding()]
@@ -102,6 +142,10 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$TargetESXiVersion = ""
 )
+
+$scriptVersion = '1.4.3'
+$scriptAuthor  = 'Paul van Dieen'
+$scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
 # -----------------------------------------------------------------------------
 # PowerCLI module check
@@ -172,7 +216,8 @@ Set-PowerCLIConfiguration -ParticipateInCEIP $false -Confirm:$false -Scope Sessi
 # Connect to vCenter
 # -----------------------------------------------------------------------------
 Write-Host "`n========================================" -ForegroundColor Cyan
-Write-Host "  vSphere HCL Hardware Inventory Tool" -ForegroundColor Cyan
+Write-Host "  vSphere HCL Hardware Inventory Tool  v$scriptVersion" -ForegroundColor Cyan
+Write-Host "  $scriptAuthor - $scriptBlogUrl" -ForegroundColor Cyan
 Write-Host "========================================`n" -ForegroundColor Cyan
 
 if (-not $Credential) {
